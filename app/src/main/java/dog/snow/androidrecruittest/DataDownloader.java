@@ -18,7 +18,7 @@ import java.net.URL;
 
 public class DataDownloader extends AsyncTask <Void, Void, Void> {
 
-    private static final String SERVER_URL = "http://1bbdf2f3.ngrok.io/api/items";
+    private static final String SERVER_URL = "http://774bac8f.ngrok.io/api/items";
     private static final String TAG = MainActivity.class.getName();
     private JSONArray downloadedJSONArray;
     private final WeakReference<Context> weakContext; //Avoid memory leak
@@ -45,7 +45,7 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
         Log.d(TAG, downloadedJSONArray.toString());
 
         dbHelper = new DBHelper(weakContext.get());
-        dbHelper.addArray(downloadedJSONArray);
+        dbHelper.insertArray(downloadedJSONArray);
 
         return null;
     }

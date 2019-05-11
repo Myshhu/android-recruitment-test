@@ -8,13 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-
-import static android.os.Build.CPU_ABI;
-import static android.os.Build.ID;
-import static java.sql.Types.DOUBLE;
-import static java.sql.Types.INTEGER;
 
 public class DBHelper extends SQLiteOpenHelper {
 
@@ -29,11 +23,13 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String COLUMN6 = "url";
 
     DBHelper(Context context) {
-        super(context, TABLE_NAME, null, 1);
+        super(context, TABLE_NAME, null, 103);
     }
+
 
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
+        Log.d(TAG, "onCreate called");
         String createTable = "CREATE TABLE " + TABLE_NAME + "(" + COLUMN1 + " INTEGER, " +
                   COLUMN2 + " TEXT, " + COLUMN3 + " TEXT, " + COLUMN4 + " TEXT, " + COLUMN5 + " LONG, " + COLUMN6 + " TEXT)";
         sqLiteDatabase.execSQL(createTable);
@@ -41,15 +37,33 @@ public class DBHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
-        /*sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
-        onCreate(sqLiteDatabase);*/
+        Log.d(TAG, "onUpgrade called");
+        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+        onCreate(sqLiteDatabase);
+    }
+
+    public void dropTable() {
+        SQLiteDatabase database = this.getWritableDatabase();
+        database.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+    }
+
+    public void createTable() {
+        SQLiteDatabase database = this.getWritableDatabase();
+        String createTable = "CREATE TABLE " + TABLE_NAME + "(" + COLUMN1 + " INTEGER, " +
+                COLUMN2 + " TEXT, " + COLUMN3 + " TEXT, " + COLUMN4 + " TEXT, " + COLUMN5 + " LONG, " + COLUMN6 + " TEXT)";
+        database.execSQL(createTable);
+    }
+
+    public void restartTable() {
+        dropTable();
+        createTable();
+        Log.i(TAG, "Database version: " + getWritableDatabase().getVersion());
     }
 
     public boolean addItem(JSONObject object) {
         SQLiteDatabase database = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         try {
-            contentValues.put(COLUMN1, object.getInt(COLUMN1));
             contentValues.put(COLUMN2, object.getString(COLUMN2));
             contentValues.put(COLUMN3, object.getString(COLUMN3));
             contentValues.put(COLUMN4, object.getString(COLUMN4));
@@ -59,20 +73,23 @@ public class DBHelper extends SQLiteOpenHelper {
             long result = database.insert(TABLE_NAME, null, contentValues);
 
             return (result != -1); //Return false when inserting failed
-        } catch (JSONException e) {
+        } catch (Exception e) {
             Log.e(TAG, "Adding to database failed", e);
             return false;
         }
     }
 
-    boolean addArray(JSONArray array) {
+    boolean insertArray(JSONArray array) {
+        restartTable();
+
         boolean result = true;
+
         for (int i = 0; i < array.length(); i++) {
             try {
                 JSONObject object = array.getJSONObject(i);
                 result = addItem(object);
             } catch (Exception e) {
-                Log.e(TAG, "addArray function failed", e);
+                Log.e(TAG, "insertArray function failed", e);
             }
         }
         return result; //Return true if all objects were successfully added
