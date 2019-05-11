@@ -4,7 +4,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -82,6 +81,9 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             } else {
                 String url = getIconURLFromCursor(holderPosition);
                 bitmap = ImageRepository.getBitmapFromUrl(url);
+
+                //Save image to cache if downloaded from url
+                ImageRepository.saveBitmapToCache(weakContext.get(), bitmap, imageName);
             }
 
             Bitmap finalBitmap = bitmap;
@@ -109,7 +111,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     private String getIconURLFromCursor(int position) {
         dbCursor.moveToPosition(position);
-        int columnIndex = dbCursor.getColumnIndex(DatabaseHelper.ID_COLUMN);
+        int columnIndex = dbCursor.getColumnIndex(DatabaseHelper.URL_COLUMN);
         return dbCursor.getString(columnIndex);
     }
 }

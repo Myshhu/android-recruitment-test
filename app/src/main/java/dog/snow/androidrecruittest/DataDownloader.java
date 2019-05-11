@@ -2,8 +2,6 @@ package dog.snow.androidrecruittest;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.view.View;
@@ -22,6 +20,8 @@ import java.net.URL;
 public class DataDownloader extends AsyncTask <Void, Void, Void> {
 
     private static final String SERVER_URL = ServerURLContainer.SERVER_URL;
+    private static final String SECOND_SERVER_URL = ServerURLContainer.SECOND_SERVER_URL;
+
     private static final String TAG = MainActivity.class.getName();
     private JSONArray downloadedJSONArray;
     private final WeakReference<Context> weakContext; //Avoid memory leak
@@ -31,28 +31,26 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
     DataDownloader(Context context, RecyclerViewAdapter mAdapter) {
         this.weakContext = new WeakReference<>(context);
         this.mAdapter = mAdapter;
-        downloadedJSONArray = new JSONArray();
+        databaseHelper = new DatabaseHelper(weakContext.get());
+
     }
 
     @Override
     protected Void doInBackground(Void... voids) {
-        try {
-            URL url = new URL(SERVER_URL);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.connect();
+        hideEmptyListTextView();
+        downloadedJSONArray = getJSONArrayFromURL(SERVER_URL);
 
-            InputStream inputStream = connection.getInputStream();
-            downloadedJSONArray = createJSONArrayFromInputStream(inputStream);
-
-            connection.disconnect();
-        } catch (Exception e) {
-            Log.e(TAG, "Data downloading error", e);
+        if(downloadedJSONArray == null) {
+            Log.i(TAG, "First server connection failed, trying to connect to second server");
+            getJSONArrayFromURL(SECOND_SERVER_URL);
         }
 
-        Log.d(TAG, downloadedJSONArray.toString());
-
-        databaseHelper = new DatabaseHelper(weakContext.get());
-        databaseHelper.insertArray(downloadedJSONArray);
+        if(downloadedJSONArray != null) {
+            Log.d(TAG, "Data successfully downloaded, inserting array to database");
+            databaseHelper.insertArray(downloadedJSONArray);
+        } else {
+            Log.e(TAG, "doInBackground - Data downloading failed");
+        }
 
         return null;
     }
@@ -61,9 +59,26 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
     protected void onPostExecute(Void aVoid) {
         super.onPostExecute(aVoid);
 
-        hideEmptyListTextView();
         Log.i(TAG, "Notifying adapter ");
         mAdapter.notifyAdapterDataSetChanged();
+    }
+
+    private JSONArray getJSONArrayFromURL(String parameterUrl) {
+        try {
+            URL url = new URL(parameterUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.connect();
+
+            InputStream inputStream = connection.getInputStream();
+            downloadedJSONArray = createJSONArrayFromInputStream(inputStream);
+
+            Log.i(TAG, "Skonczylem polaczenie");
+            connection.disconnect();
+        } catch (Exception e) {
+            Log.e(TAG, "Data downloading error", e);
+            downloadedJSONArray = null;
+        }
+        return downloadedJSONArray;
     }
 
     private JSONArray createJSONArrayFromInputStream(InputStream inputStream) throws IOException, JSONException {
@@ -74,20 +89,6 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
             result.append(line).append("\n");
         }
         return new JSONArray(result.toString());
-    }
-
-    private Bitmap getBitmapFromUrl(String imageUrl) {
-        try {
-            URL url = new URL(imageUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setDoInput(true);
-            connection.connect();
-            InputStream input = connection.getInputStream();
-            return BitmapFactory.decodeStream(input);
-        } catch (IOException e) {
-            Log.e(TAG, "getBitmapFromUrl error", e);
-            return null;
-        }
     }
 
     private void printItemsFromDatabase() {
