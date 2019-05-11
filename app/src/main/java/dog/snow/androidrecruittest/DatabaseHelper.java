@@ -10,9 +10,9 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class DBHelper extends SQLiteOpenHelper {
+public class DatabaseHelper extends SQLiteOpenHelper {
 
-    private static final String TAG = "DBHelper";
+    private static final String TAG = "DatabaseHelper";
 
     private static final String TABLE_NAME = "JSON_Items";
     private static final String COLUMN1 = "id";
@@ -22,7 +22,7 @@ public class DBHelper extends SQLiteOpenHelper {
     private static final String COLUMN5 = "timestamp";
     private static final String COLUMN6 = "url";
 
-    DBHelper(Context context) {
+    DatabaseHelper(Context context) {
         super(context, TABLE_NAME, null, 103);
     }
 

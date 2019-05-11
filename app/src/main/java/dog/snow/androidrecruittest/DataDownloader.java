@@ -2,11 +2,14 @@ package dog.snow.androidrecruittest;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,11 +21,11 @@ import java.net.URL;
 
 public class DataDownloader extends AsyncTask <Void, Void, Void> {
 
-    private static final String SERVER_URL = "http://774bac8f.ngrok.io/api/items";
+    private static final String SERVER_URL = ServerURLContainer.SERVER_URL;
     private static final String TAG = MainActivity.class.getName();
     private JSONArray downloadedJSONArray;
     private final WeakReference<Context> weakContext; //Avoid memory leak
-    private DBHelper dbHelper;
+    private DatabaseHelper databaseHelper;
 
     DataDownloader(Context context) {
         this.weakContext = new WeakReference<>(context);
@@ -38,14 +41,18 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
 
             InputStream inputStream = connection.getInputStream();
             downloadedJSONArray = createJSONArrayFromInputStream(inputStream);
+
+            connection.disconnect();
         } catch (Exception e) {
             Log.e(TAG, "Data downloading error", e);
         }
 
         Log.d(TAG, downloadedJSONArray.toString());
 
-        dbHelper = new DBHelper(weakContext.get());
-        dbHelper.insertArray(downloadedJSONArray);
+        databaseHelper = new DatabaseHelper(weakContext.get());
+        databaseHelper.insertArray(downloadedJSONArray);
+
+        downloadBitmapsToCache(downloadedJSONArray);
 
         return null;
     }
@@ -54,16 +61,7 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
     protected void onPostExecute(Void aVoid) {
         super.onPostExecute(aVoid);
 
-        Cursor items = dbHelper.getItems();
-        while (items.moveToNext()) {
-            String result = items.getInt(0) + " " +
-                    items.getString(1) + " " +
-                    items.getString(2) + " " +
-                    items.getString(3) + " " +
-                    items.getLong(4) + " " +
-                    items.getString(5) + " ";
-                    Log.i(TAG, result);
-        }
+        printItemsFromDatabase();
     }
 
     private JSONArray createJSONArrayFromInputStream(InputStream inputStream) throws IOException, JSONException {
@@ -74,5 +72,60 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
             result.append(line).append("\n");
         }
         return new JSONArray(result.toString());
+    }
+
+    private void downloadBitmapsToCache(JSONArray downloadedJSONArray) {
+        for (int i = 0; i < downloadedJSONArray.length(); i++) {
+            try {
+                JSONObject object = downloadedJSONArray.getJSONObject(i);
+                String imageName = object.getString("name"); //Images will be saved with object name
+
+                if (ImageRepository.isBitmapInCache(weakContext.get(), imageName)) {
+                    Log.i(TAG, "Zdjęcie " + imageName + " jest w pamięci, nie pobieram");
+                } else {
+                    Log.i(TAG, "Zdjęcia " + imageName + " nie ma w pamięci, pobieram");
+                    String imageUrl = object.getString("icon");
+                    Bitmap bitmap = getBitmapFromUrl(imageUrl);
+                    saveBitmapToCache(bitmap, imageName);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "downloadBitmapsToCache function error", e);
+            }
+        }
+    }
+
+    private Bitmap getBitmapFromUrl(String imageUrl) {
+        try {
+            URL url = new URL(imageUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.connect();
+            InputStream input = connection.getInputStream();
+            return BitmapFactory.decodeStream(input);
+        } catch (IOException e) {
+            Log.e(TAG, "getBitmapFromUrl error", e);
+            return null;
+        }
+    }
+
+    private void saveBitmapToCache(Bitmap bitmap, String imageName) {
+        if (bitmap != null) {
+            ImageRepository.saveBitmapToCache(weakContext.get(), bitmap, imageName);
+        } else {
+            Log.i(TAG, "Bitmap is null");
+        }
+    }
+
+    private void printItemsFromDatabase() {
+        Cursor items = databaseHelper.getItems();
+        while (items.moveToNext()) {
+            String result = items.getInt(0) + " " + // Id
+                    items.getString(1) + " " +  // Name
+                    items.getString(2) + " " +  // Description
+                    items.getString(3) + " " +  // Icon
+                    items.getLong(4) + " " +    // Timestamp
+                    items.getString(5) + " ";   // Url
+            Log.i(TAG, result);
+        }
     }
 }
