@@ -6,10 +6,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.util.Log;
+import android.view.View;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -26,9 +26,11 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
     private JSONArray downloadedJSONArray;
     private final WeakReference<Context> weakContext; //Avoid memory leak
     private DatabaseHelper databaseHelper;
+    private RecyclerViewAdapter mAdapter;
 
-    DataDownloader(Context context) {
+    DataDownloader(Context context, RecyclerViewAdapter mAdapter) {
         this.weakContext = new WeakReference<>(context);
+        this.mAdapter = mAdapter;
         downloadedJSONArray = new JSONArray();
     }
 
@@ -52,8 +54,6 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
         databaseHelper = new DatabaseHelper(weakContext.get());
         databaseHelper.insertArray(downloadedJSONArray);
 
-        downloadBitmapsToCache(downloadedJSONArray);
-
         return null;
     }
 
@@ -61,7 +61,9 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
     protected void onPostExecute(Void aVoid) {
         super.onPostExecute(aVoid);
 
-        printItemsFromDatabase();
+        hideEmptyListTextView();
+        Log.i(TAG, "Notifying adapter ");
+        mAdapter.notifyAdapterDataSetChanged();
     }
 
     private JSONArray createJSONArrayFromInputStream(InputStream inputStream) throws IOException, JSONException {
@@ -72,26 +74,6 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
             result.append(line).append("\n");
         }
         return new JSONArray(result.toString());
-    }
-
-    private void downloadBitmapsToCache(JSONArray downloadedJSONArray) {
-        for (int i = 0; i < downloadedJSONArray.length(); i++) {
-            try {
-                JSONObject object = downloadedJSONArray.getJSONObject(i);
-                String imageName = object.getString("name"); //Images will be saved with object name
-
-                if (ImageRepository.isBitmapInCache(weakContext.get(), imageName)) {
-                    Log.i(TAG, "Zdjęcie " + imageName + " jest w pamięci, nie pobieram");
-                } else {
-                    Log.i(TAG, "Zdjęcia " + imageName + " nie ma w pamięci, pobieram");
-                    String imageUrl = object.getString("icon");
-                    Bitmap bitmap = getBitmapFromUrl(imageUrl);
-                    saveBitmapToCache(bitmap, imageName);
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "downloadBitmapsToCache function error", e);
-            }
-        }
     }
 
     private Bitmap getBitmapFromUrl(String imageUrl) {
@@ -108,14 +90,6 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
         }
     }
 
-    private void saveBitmapToCache(Bitmap bitmap, String imageName) {
-        if (bitmap != null) {
-            ImageRepository.saveBitmapToCache(weakContext.get(), bitmap, imageName);
-        } else {
-            Log.i(TAG, "Bitmap is null");
-        }
-    }
-
     private void printItemsFromDatabase() {
         Cursor items = databaseHelper.getItems();
         while (items.moveToNext()) {
@@ -126,6 +100,12 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
                     items.getLong(4) + " " +    // Timestamp
                     items.getString(5) + " ";   // Url
             Log.i(TAG, result);
+        }
+    }
+
+    private void hideEmptyListTextView() {
+        if (databaseHelper.getItems().getCount() > 0) {
+            ((MainActivity)weakContext.get()).findViewById(R.id.empty_list_tv).setVisibility(View.GONE);
         }
     }
 }
