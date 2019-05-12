@@ -35,9 +35,11 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                DatabaseHelper databaseHelper = new DatabaseHelper(getApplicationContext());
-                Cursor filteredItems = databaseHelper.getFilteredItems(charSequence.toString());
-                mAdapter.setFilteredResults(filteredItems);
+                new Thread(() -> {
+                    DatabaseHelper databaseHelper = new DatabaseHelper(getApplicationContext());
+                    Cursor filteredItems = databaseHelper.getFilteredItems(charSequence.toString());
+                    mAdapter.setFilteredResults(filteredItems);
+                }).start();
             }
 
             @Override
