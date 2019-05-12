@@ -19,7 +19,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String ID_COLUMN = "id";
     static final String NAME_COLUMN = "name";
     static final String DESCRIPTION_COLUMN = "description";
-    private static final String ICON_COLUMN = "icon";
+    static final String ICON_COLUMN = "icon";
     private static final String TIMESTAMP_COLUMN = "timestamp";
     static final String URL_COLUMN = "url";
 
@@ -44,6 +44,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private void dropTable() {
+        Log.d(TAG, "Dropping table");
         SQLiteDatabase database = this.getWritableDatabase();
         database.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
     }
@@ -61,7 +62,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Log.i(TAG, "Database version: " + getWritableDatabase().getVersion());
     }
 
-    private void addItem(JSONObject object) {
+    void addItem(JSONObject object) {
         SQLiteDatabase database = this.getWritableDatabase();
         ContentValues contentValues = createContentValues(object);
         long result = database.insert(TABLE_NAME, null, contentValues);
@@ -127,9 +128,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     void insertArray(JSONArray array) {
         restartTable();
+        Log.i(TAG, "Starting to insert array");
 
         for (int i = 0; i < array.length(); i++) {
             try {
+                Log.i(TAG, "Inserting item " + i);
                 JSONObject object = array.getJSONObject(i);
                 addItem(object);
             } catch (Exception e) {

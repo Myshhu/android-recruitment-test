@@ -4,6 +4,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,6 +45,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     void notifyAdapterDataSetChanged() {
         dbCursor = databaseHelper.getItems();
+        hideEmptyListTextView();
         this.notifyDataSetChanged();
     }
 
@@ -91,7 +93,12 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     @Override
     public int getItemCount() {
-        return dbCursor.getCount();
+        try {
+            return dbCursor.getCount();
+        } catch (Exception e) {
+            Log.e(TAG, "getItemCount error", e);
+            return 0;
+        }
     }
 
     private String getNameFromCursor(int position) {
@@ -108,7 +115,16 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     private String getIconURLFromCursor(int position) {
         dbCursor.moveToPosition(position);
-        int columnIndex = dbCursor.getColumnIndex(DatabaseHelper.URL_COLUMN);
+        int columnIndex = dbCursor.getColumnIndex(DatabaseHelper.ICON_COLUMN);
         return dbCursor.getString(columnIndex);
+    }
+
+    private void hideEmptyListTextView() {
+        if (databaseHelper.getItems().getCount() > 0) {
+            View tvEmptyList = ((MainActivity) weakContext.get()).findViewById(R.id.empty_list_tv);
+            if (tvEmptyList != null) {
+                ((MainActivity) weakContext.get()).runOnUiThread(() -> tvEmptyList.setVisibility(View.GONE));
+            }
+        }
     }
 }

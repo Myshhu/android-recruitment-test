@@ -4,10 +4,11 @@ import android.content.Context;
 import android.database.Cursor;
 import android.os.AsyncTask;
 import android.util.Log;
-import android.view.View;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,7 +18,7 @@ import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class DataDownloader extends AsyncTask <Void, Void, Void> {
+public class DataDownloader extends AsyncTask <Void, Integer, Void> {
 
     private static final String SERVER_URL = ServerURLContainer.SERVER_URL;
     private static final String SECOND_SERVER_URL = ServerURLContainer.SECOND_SERVER_URL;
@@ -42,24 +43,50 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
 
         if(downloadedJSONArray == null) {
             Log.i(TAG, "First server connection failed, trying to connect to second server");
+            makeToast("First server connection failed");
             getJSONArrayFromURL(SECOND_SERVER_URL);
         }
 
         if(downloadedJSONArray != null) {
             Log.d(TAG, "Data successfully downloaded, inserting array to database");
-            databaseHelper.insertArray(downloadedJSONArray);
+            makeToast("Data successfully downloaded");
+            insertArrayToDatabase(downloadedJSONArray);
         } else {
             Log.e(TAG, "doInBackground - Data downloading failed");
+            makeToast("Data downloading failed - check connection and restart app");
         }
 
         return null;
     }
 
+    private void insertArrayToDatabase(JSONArray array) {
+        databaseHelper.restartTable();
+        Log.i(TAG, "Starting to insert array");
+
+        for (int i = 0; i < array.length(); i++) {
+            try {
+                JSONObject object = array.getJSONObject(i);
+                databaseHelper.addItem(object);
+                onProgressUpdate(i);
+            } catch (Exception e) {
+                Log.e(TAG, "insertArrayToDatabase function failed", e);
+            }
+        }
+    }
+
+    @Override
+    protected void onProgressUpdate(Integer... values) {
+        super.onProgressUpdate(values);
+
+        if(values[0] % 500 == 0) { //Refresh every 500 items added; app slows when list is refreshed after adding every item
+            Log.i(TAG, "notifying Item Inserted item " + values[0]);
+            mAdapter.notifyAdapterDataSetChanged();
+        }
+    }
+
     @Override
     protected void onPostExecute(Void aVoid) {
         super.onPostExecute(aVoid);
-
-        hideEmptyListTextView();
 
         Log.i(TAG, "Notifying adapter ");
         mAdapter.notifyAdapterDataSetChanged();
@@ -69,6 +96,7 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
         try {
             URL url = new URL(parameterUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(3000);
             connection.connect();
 
             InputStream inputStream = connection.getInputStream();
@@ -105,12 +133,7 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
         }
     }
 
-    private void hideEmptyListTextView() {
-        if (databaseHelper.getItems().getCount() > 0) {
-                View tvEmptyList = ((MainActivity) weakContext.get()).findViewById(R.id.empty_list_tv);
-                if (tvEmptyList != null) {
-                    tvEmptyList.setVisibility(View.GONE);
-                }
-        }
+    private void makeToast(String text) {
+        ((MainActivity)weakContext.get()).runOnUiThread(() -> Toast.makeText(weakContext.get(), text, Toast.LENGTH_SHORT).show());
     }
 }
