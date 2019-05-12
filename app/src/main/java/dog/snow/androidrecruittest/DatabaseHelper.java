@@ -146,4 +146,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String query = "SELECT * FROM " + TABLE_NAME;
         return database.rawQuery(query, null);
     }
+
+    Cursor getFilteredItems(String searchedText) {
+        if (searchedText.equals("") || searchedText.trim().length() == 0) { //Check if searchedText is only whitespaces
+            return getItems();
+        }
+        SQLiteDatabase database = this.getWritableDatabase();
+        String query = "SELECT * FROM " + TABLE_NAME + " WHERE " + NAME_COLUMN + " LIKE " + "'%" + searchedText + "%'" + " OR " + DESCRIPTION_COLUMN + " LIKE " + "'%" + searchedText + "%'";
+        Log.i(TAG, "Performing query: " + query);
+        return database.rawQuery(query, null);
+    }
 }

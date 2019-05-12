@@ -49,6 +49,11 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         ((MainActivity)weakContext.get()).runOnUiThread(this::notifyDataSetChanged);
     }
 
+    void setFilteredResults(Cursor cursor) {
+        this.dbCursor = cursor;
+        ((MainActivity)weakContext.get()).runOnUiThread(this::notifyDataSetChanged);
+    }
+
     // Create new views (invoked by the layout manager)
     @Override
     public RecyclerViewAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent,
