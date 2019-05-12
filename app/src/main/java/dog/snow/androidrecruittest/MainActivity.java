@@ -7,27 +7,30 @@ import android.support.v7.widget.RecyclerView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private RecyclerView recyclerView;
     private RecyclerViewAdapter mAdapter;
-    private RecyclerView.LayoutManager layoutManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        recyclerView = (RecyclerView) findViewById(R.id.items_rv);
-        //recyclerView.setHasFixedSize(true);
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.items_rv);
 
-        layoutManager = new LinearLayoutManager(this);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
 
         mAdapter = new RecyclerViewAdapter(this);
         recyclerView.setAdapter(mAdapter);
+
+        resetDatabase();
         downloadData();
     }
 
     private void downloadData() {
         DataDownloader dataDownloader = new DataDownloader(this, mAdapter);
         dataDownloader.execute();
+    }
+
+    private void resetDatabase() {
+        new DatabaseHelper(this).restartTable();
     }
 }

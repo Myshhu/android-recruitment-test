@@ -37,7 +37,7 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
 
     @Override
     protected Void doInBackground(Void... voids) {
-        hideEmptyListTextView();
+
         downloadedJSONArray = getJSONArrayFromURL(SERVER_URL);
 
         if(downloadedJSONArray == null) {
@@ -59,6 +59,8 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
     protected void onPostExecute(Void aVoid) {
         super.onPostExecute(aVoid);
 
+        hideEmptyListTextView();
+
         Log.i(TAG, "Notifying adapter ");
         mAdapter.notifyAdapterDataSetChanged();
     }
@@ -72,7 +74,6 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
             InputStream inputStream = connection.getInputStream();
             downloadedJSONArray = createJSONArrayFromInputStream(inputStream);
 
-            Log.i(TAG, "Skonczylem polaczenie");
             connection.disconnect();
         } catch (Exception e) {
             Log.e(TAG, "Data downloading error", e);
@@ -106,7 +107,10 @@ public class DataDownloader extends AsyncTask <Void, Void, Void> {
 
     private void hideEmptyListTextView() {
         if (databaseHelper.getItems().getCount() > 0) {
-            ((MainActivity)weakContext.get()).findViewById(R.id.empty_list_tv).setVisibility(View.GONE);
+                View tvEmptyList = ((MainActivity) weakContext.get()).findViewById(R.id.empty_list_tv);
+                if (tvEmptyList != null) {
+                    tvEmptyList.setVisibility(View.GONE);
+                }
         }
     }
 }

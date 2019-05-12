@@ -15,13 +15,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "DatabaseHelper";
 
-    public static final String TABLE_NAME = "JSON_Items";
-    public static final String ID_COLUMN = "id";
-    public static final String NAME_COLUMN = "name";
-    public static final String DESCRIPTION_COLUMN = "description";
-    public static final String ICON_COLUMN = "icon";
-    public static final String TIMESTAMP_COLUMN = "timestamp";
-    public static final String URL_COLUMN = "url";
+    private static final String TABLE_NAME = "JSON_Items";
+    private static final String ID_COLUMN = "id";
+    static final String NAME_COLUMN = "name";
+    static final String DESCRIPTION_COLUMN = "description";
+    private static final String ICON_COLUMN = "icon";
+    private static final String TIMESTAMP_COLUMN = "timestamp";
+    static final String URL_COLUMN = "url";
 
     DatabaseHelper(Context context) {
         super(context, TABLE_NAME, null, 103);
@@ -43,32 +43,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(sqLiteDatabase);
     }
 
-    public void dropTable() {
+    private void dropTable() {
         SQLiteDatabase database = this.getWritableDatabase();
         database.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
     }
 
-    public void createTable() {
+    private void createTable() {
         SQLiteDatabase database = this.getWritableDatabase();
         String createTable = "CREATE TABLE " + TABLE_NAME + "(" + ID_COLUMN + " INTEGER, " +
                 NAME_COLUMN + " TEXT, " + DESCRIPTION_COLUMN + " TEXT, " + ICON_COLUMN + " TEXT, " + TIMESTAMP_COLUMN + " LONG, " + URL_COLUMN + " TEXT)";
         database.execSQL(createTable);
     }
 
-    public void restartTable() {
+    void restartTable() {
         dropTable();
         createTable();
         Log.i(TAG, "Database version: " + getWritableDatabase().getVersion());
     }
 
-    public boolean addItem(JSONObject object) {
+    private void addItem(JSONObject object) {
         SQLiteDatabase database = this.getWritableDatabase();
         ContentValues contentValues = createContentValues(object);
         long result = database.insert(TABLE_NAME, null, contentValues);
         if (result == -1) {
             Log.e(TAG, "Inserting to database failed");
         }
-        return (result != -1); //Return false when inserting failed
     }
 
     private ContentValues createContentValues(JSONObject object) {
@@ -126,20 +125,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return contentValues;
     }
 
-    boolean insertArray(JSONArray array) {
+    void insertArray(JSONArray array) {
         restartTable();
-
-        boolean result = true;
 
         for (int i = 0; i < array.length(); i++) {
             try {
                 JSONObject object = array.getJSONObject(i);
-                result = addItem(object);
+                addItem(object);
             } catch (Exception e) {
                 Log.e(TAG, "insertArray function failed", e);
             }
         }
-        return result; //Return true if all objects were successfully added
     }
 
     Cursor getItems() {

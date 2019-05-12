@@ -23,12 +23,12 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
-    public static class MyViewHolder extends RecyclerView.ViewHolder {
+    static class MyViewHolder extends RecyclerView.ViewHolder {
         // each data item is just a string in this case
         private TextView tvName;
         private TextView tvDescription;
         ImageView imageViewIcon;
-        public MyViewHolder(View v) {
+        MyViewHolder(View v) {
             super(v);
             tvName = (TextView) v.findViewById(R.id.name_tv);
             tvDescription = (TextView) v.findViewById(R.id.description_tv);
@@ -36,13 +36,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         }
     }
 
-    public RecyclerViewAdapter(Context context) {
+    RecyclerViewAdapter(Context context) {
         weakContext = new WeakReference<>(context);
         databaseHelper = new DatabaseHelper(context);
         dbCursor = databaseHelper.getItems();
     }
 
-    public void notifyAdapterDataSetChanged() {
+    void notifyAdapterDataSetChanged() {
         dbCursor = databaseHelper.getItems();
         this.notifyDataSetChanged();
     }
@@ -54,8 +54,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item, parent, false);
-        MyViewHolder vh = new MyViewHolder(v);
-        return vh;
+        return new MyViewHolder(v);
     }
 
     // Replace the contents of a view (invoked by the layout manager)
@@ -68,8 +67,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         holder.tvDescription.setText(description);
 
         setHolderImage(holder, position, name);
-
-
     }
 
     private void setHolderImage(MyViewHolder holder, int holderPosition, String imageName) {
