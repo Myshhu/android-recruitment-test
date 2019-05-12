@@ -6,14 +6,19 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.ref.WeakReference;
+
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "DatabaseHelper";
+    private final WeakReference<Context> weakContext; //Avoid memory leak
+
 
     private static final String TABLE_NAME = "JSON_Items";
     private static final String ID_COLUMN = "id";
@@ -25,6 +30,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     DatabaseHelper(Context context) {
         super(context, TABLE_NAME, null, 103);
+        weakContext = new WeakReference<>(context);
     }
 
 
@@ -151,9 +157,19 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (searchedText.equals("") || searchedText.trim().length() == 0) { //Check if searchedText is only whitespaces
             return getItems();
         }
-        SQLiteDatabase database = this.getWritableDatabase();
-        String query = "SELECT * FROM " + TABLE_NAME + " WHERE " + NAME_COLUMN + " LIKE " + "'%" + searchedText + "%'" + " OR " + DESCRIPTION_COLUMN + " LIKE " + "'%" + searchedText + "%'";
-        Log.i(TAG, "Performing query: " + query);
-        return database.rawQuery(query, null);
+        try {
+            SQLiteDatabase database = this.getWritableDatabase();
+            String query = "SELECT * FROM " + TABLE_NAME + " WHERE " + NAME_COLUMN + " LIKE " + "'%" + searchedText + "%'" + " OR " + DESCRIPTION_COLUMN + " LIKE " + "'%" + searchedText + "%'";
+            Log.i(TAG, "Performing query: " + query);
+            return database.rawQuery(query, null);
+        } catch (Exception e) {
+            Log.e(TAG, "getFilteredItems error", e);
+            makeToast("Filtering error");
+            return getItems();
+        }
+    }
+
+    private void makeToast(String text) {
+        ((MainActivity)weakContext.get()).runOnUiThread(() -> Toast.makeText(weakContext.get(), text, Toast.LENGTH_SHORT).show());
     }
 }
