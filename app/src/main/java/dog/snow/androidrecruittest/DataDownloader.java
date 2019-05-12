@@ -78,7 +78,7 @@ public class DataDownloader extends AsyncTask <Void, Integer, Void> {
     protected void onProgressUpdate(Integer... values) {
         super.onProgressUpdate(values);
 
-        if(values[0] % 500 == 0) { //Refresh every 500 items added; app slows when list is refreshed after adding every item
+        if(values[0] == 20 || values[0] % 500 == 0) { //Refresh every 500 items added or after adding first 20 items; app slows when list is refreshed after adding every item
             Log.i(TAG, "notifying Item Inserted item " + values[0]);
             mAdapter.notifyAdapterDataSetChanged();
         }
@@ -89,6 +89,7 @@ public class DataDownloader extends AsyncTask <Void, Integer, Void> {
         super.onPostExecute(aVoid);
 
         Log.i(TAG, "Notifying adapter ");
+        makeToast("List completed");
         mAdapter.notifyAdapterDataSetChanged();
     }
 

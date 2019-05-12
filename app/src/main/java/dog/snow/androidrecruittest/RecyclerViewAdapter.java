@@ -46,7 +46,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     void notifyAdapterDataSetChanged() {
         dbCursor = databaseHelper.getItems();
         hideEmptyListTextView();
-        this.notifyDataSetChanged();
+        ((MainActivity)weakContext.get()).runOnUiThread(this::notifyDataSetChanged);
     }
 
     // Create new views (invoked by the layout manager)
