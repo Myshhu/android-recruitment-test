@@ -3,6 +3,7 @@ package dog.snow.androidrecruittest;
 import android.content.Context;
 import android.database.Cursor;
 import android.os.AsyncTask;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -28,10 +29,12 @@ public class DataDownloader extends AsyncTask <Void, Integer, Void> {
     private final WeakReference<Context> weakContext; //Avoid memory leak
     private DatabaseHelper databaseHelper;
     private RecyclerViewAdapter mAdapter;
+    private final WeakReference<SwipeRefreshLayout> weakMSwipeRefreshLayout;
 
-    DataDownloader(Context context, RecyclerViewAdapter mAdapter) {
+    DataDownloader(Context context, RecyclerViewAdapter mAdapter, SwipeRefreshLayout mSwipeRefreshLayout) {
         this.weakContext = new WeakReference<>(context);
         this.mAdapter = mAdapter;
+        this.weakMSwipeRefreshLayout = new WeakReference<>(mSwipeRefreshLayout);
         databaseHelper = new DatabaseHelper(weakContext.get());
 
     }
@@ -50,13 +53,20 @@ public class DataDownloader extends AsyncTask <Void, Integer, Void> {
         if(downloadedJSONArray != null) {
             Log.d(TAG, "Data successfully downloaded, inserting array to database");
             makeToast("Data successfully downloaded");
+            stopRefreshingAnimation();
             insertArrayToDatabase(downloadedJSONArray);
         } else {
             Log.e(TAG, "doInBackground - Data downloading failed");
             makeToast("Data downloading failed - check connection and restart app");
+            stopRefreshingAnimation();
         }
 
+
         return null;
+    }
+
+    private void stopRefreshingAnimation() {
+        ((MainActivity)weakContext.get()).runOnUiThread(() -> weakMSwipeRefreshLayout.get().setRefreshing(false));
     }
 
     private void insertArrayToDatabase(JSONArray array) {
@@ -65,9 +75,13 @@ public class DataDownloader extends AsyncTask <Void, Integer, Void> {
 
         for (int i = 0; i < array.length(); i++) {
             try {
-                JSONObject object = array.getJSONObject(i);
-                databaseHelper.addItem(object);
-                onProgressUpdate(i);
+                if(!isCancelled()) {
+                    JSONObject object = array.getJSONObject(i);
+                    databaseHelper.addItem(object);
+                    onProgressUpdate(i);
+                } else {
+                    cancel(true);
+                }
             } catch (Exception e) {
                 Log.e(TAG, "insertArrayToDatabase function failed", e);
             }
