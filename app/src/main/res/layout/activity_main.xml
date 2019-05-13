@@ -4,7 +4,7 @@
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="dog.snow.androidrecruittest.MainActivity">
+    tools:context="dog.snow.androidrecruittest.app.MainActivity">
 
     <EditText
         android:id="@+id/search_et"

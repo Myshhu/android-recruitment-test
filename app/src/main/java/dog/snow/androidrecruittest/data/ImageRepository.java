@@ -1,4 +1,4 @@
-package dog.snow.androidrecruittest;
+package dog.snow.androidrecruittest.data;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -17,6 +17,8 @@ public class ImageRepository {
 
     private static final String TAG = ImageRepository.class.getName();
 
+    ImageRepository() {}
+
     public static void saveBitmapToCache(Context context, Bitmap pic, String name) {
         File cacheDir = context.getCacheDir();
         File pictureFile = new File(cacheDir, name);
@@ -34,7 +36,7 @@ public class ImageRepository {
         Bitmap bitmap;
 
         //Firstly check if passed name is null, then check if file with given name exists
-        if(name != null && new File(cacheDir, name).exists()) {
+        if (name != null && new File(cacheDir, name).exists()) {
             bitmap = getBitmapFromFile(new File(cacheDir, name));
         } else {
             return null;

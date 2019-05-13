@@ -1,7 +1,6 @@
-package dog.snow.androidrecruittest;
+package dog.snow.androidrecruittest.data;
 
 import android.content.Context;
-import android.database.Cursor;
 import android.os.AsyncTask;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
@@ -19,7 +18,12 @@ import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class DataDownloader extends AsyncTask <Void, Integer, Void> {
+import dog.snow.androidrecruittest.app.MainActivity;
+import dog.snow.androidrecruittest.app.RecyclerViewAdapter;
+import dog.snow.androidrecruittest.database.DatabaseHelper;
+import dog.snow.androidrecruittest.values.ServerURLContainer;
+
+public class DataDownloader extends AsyncTask<Void, Integer, Void> {
 
     private static final String SERVER_URL = ServerURLContainer.SERVER_URL;
     private static final String SECOND_SERVER_URL = ServerURLContainer.SECOND_SERVER_URL;
@@ -31,7 +35,7 @@ public class DataDownloader extends AsyncTask <Void, Integer, Void> {
     private RecyclerViewAdapter mAdapter;
     private final WeakReference<SwipeRefreshLayout> weakMSwipeRefreshLayout;
 
-    DataDownloader(Context context, RecyclerViewAdapter mAdapter, SwipeRefreshLayout mSwipeRefreshLayout) {
+    public DataDownloader(Context context, RecyclerViewAdapter mAdapter, SwipeRefreshLayout mSwipeRefreshLayout) {
         this.weakContext = new WeakReference<>(context);
         this.mAdapter = mAdapter;
         this.weakMSwipeRefreshLayout = new WeakReference<>(mSwipeRefreshLayout);
@@ -44,13 +48,13 @@ public class DataDownloader extends AsyncTask <Void, Integer, Void> {
 
         downloadedJSONArray = getJSONArrayFromURL(SERVER_URL);
 
-        if(downloadedJSONArray == null) {
+        if (downloadedJSONArray == null) {
             Log.i(TAG, "First server connection failed, trying to connect to second server");
             makeToast("First server connection failed");
             getJSONArrayFromURL(SECOND_SERVER_URL);
         }
 
-        if(downloadedJSONArray != null) {
+        if (downloadedJSONArray != null) {
             Log.d(TAG, "Data successfully downloaded, inserting array to database");
             makeToast("Data successfully downloaded");
             stopRefreshingAnimation();
@@ -60,13 +64,11 @@ public class DataDownloader extends AsyncTask <Void, Integer, Void> {
             makeToast("Data downloading failed - check connection and restart app");
             stopRefreshingAnimation();
         }
-
-
         return null;
     }
 
     private void stopRefreshingAnimation() {
-        ((MainActivity)weakContext.get()).runOnUiThread(() -> weakMSwipeRefreshLayout.get().setRefreshing(false));
+        ((MainActivity) weakContext.get()).runOnUiThread(() -> weakMSwipeRefreshLayout.get().setRefreshing(false));
     }
 
     private void insertArrayToDatabase(JSONArray array) {
@@ -75,7 +77,7 @@ public class DataDownloader extends AsyncTask <Void, Integer, Void> {
 
         for (int i = 0; i < array.length(); i++) {
             try {
-                if(!isCancelled()) {
+                if (!isCancelled()) {
                     JSONObject object = array.getJSONObject(i);
                     databaseHelper.addItem(object);
                     onProgressUpdate(i);
@@ -92,7 +94,7 @@ public class DataDownloader extends AsyncTask <Void, Integer, Void> {
     protected void onProgressUpdate(Integer... values) {
         super.onProgressUpdate(values);
 
-        if(values[0] == 20 || values[0] % 500 == 0) { //Refresh every 500 items added or after adding first 20 items; app slows when list is refreshed after adding every item
+        if (values[0] == 20 || values[0] % 500 == 0) { //Refresh every 500 items added or after adding first 20 items; app slows when list is refreshed after adding every item
             Log.i(TAG, "notifying Item Inserted item " + values[0]);
             mAdapter.notifyAdapterDataSetChanged();
         }
@@ -129,26 +131,13 @@ public class DataDownloader extends AsyncTask <Void, Integer, Void> {
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
         StringBuilder result = new StringBuilder();
         String line;
-        while((line = bufferedReader.readLine()) != null) {
+        while ((line = bufferedReader.readLine()) != null) {
             result.append(line).append("\n");
         }
         return new JSONArray(result.toString());
     }
 
-    private void printItemsFromDatabase() {
-        Cursor items = databaseHelper.getItems();
-        while (items.moveToNext()) {
-            String result = items.getInt(0) + " " + // Id
-                    items.getString(1) + " " +  // Name
-                    items.getString(2) + " " +  // Description
-                    items.getString(3) + " " +  // Icon
-                    items.getLong(4) + " " +    // Timestamp
-                    items.getString(5) + " ";   // Url
-            Log.i(TAG, result);
-        }
-    }
-
     private void makeToast(String text) {
-        ((MainActivity)weakContext.get()).runOnUiThread(() -> Toast.makeText(weakContext.get(), text, Toast.LENGTH_SHORT).show());
+        ((MainActivity) weakContext.get()).runOnUiThread(() -> Toast.makeText(weakContext.get(), text, Toast.LENGTH_SHORT).show());
     }
 }

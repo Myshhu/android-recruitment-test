@@ -1,4 +1,4 @@
-package dog.snow.androidrecruittest;
+package dog.snow.androidrecruittest.app;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -13,13 +13,16 @@ import android.widget.TextView;
 
 import java.lang.ref.WeakReference;
 
+import dog.snow.androidrecruittest.R;
+import dog.snow.androidrecruittest.data.ImageRepository;
+import dog.snow.androidrecruittest.database.DatabaseHelper;
+
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.MyViewHolder> {
     private DatabaseHelper databaseHelper;
     private Cursor dbCursor;
     private final WeakReference<Context> weakContext; //Avoid memory leak
 
     private static final String TAG = RecyclerViewAdapter.class.getName();
-
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -29,6 +32,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         private TextView tvName;
         private TextView tvDescription;
         ImageView imageViewIcon;
+
         MyViewHolder(View v) {
             super(v);
             tvName = (TextView) v.findViewById(R.id.name_tv);
@@ -43,21 +47,21 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         dbCursor = databaseHelper.getItems();
     }
 
-    void notifyAdapterDataSetChanged() {
+    public void notifyAdapterDataSetChanged() {
         dbCursor = databaseHelper.getItems();
         hideEmptyListTextView();
-        ((MainActivity)weakContext.get()).runOnUiThread(this::notifyDataSetChanged);
+        ((MainActivity) weakContext.get()).runOnUiThread(this::notifyDataSetChanged);
     }
 
     void setFilteredResults(Cursor cursor) {
         this.dbCursor = cursor;
-        ((MainActivity)weakContext.get()).runOnUiThread(this::notifyDataSetChanged);
+        ((MainActivity) weakContext.get()).runOnUiThread(this::notifyDataSetChanged);
     }
 
     // Create new views (invoked by the layout manager)
     @Override
     public RecyclerViewAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent,
-                                                     int viewType) {
+                                                               int viewType) {
 
         View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item, parent, false);
@@ -91,7 +95,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             }
 
             Bitmap finalBitmap = bitmap;
-            ((MainActivity)weakContext.get()).runOnUiThread(() -> holder.imageViewIcon.setImageBitmap(finalBitmap));
+            ((MainActivity) weakContext.get()).runOnUiThread(() -> holder.imageViewIcon.setImageBitmap(finalBitmap));
 
         }).start();
     }

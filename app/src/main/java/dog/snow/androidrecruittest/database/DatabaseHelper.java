@@ -1,4 +1,4 @@
-package dog.snow.androidrecruittest;
+package dog.snow.androidrecruittest.database;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -8,11 +8,12 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 import android.widget.Toast;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
+
+import dog.snow.androidrecruittest.app.MainActivity;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -22,13 +23,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TABLE_NAME = "JSON_Items";
     private static final String ID_COLUMN = "id";
-    static final String NAME_COLUMN = "name";
-    static final String DESCRIPTION_COLUMN = "description";
-    static final String ICON_COLUMN = "icon";
+    public static final String NAME_COLUMN = "name";
+    public static final String DESCRIPTION_COLUMN = "description";
+    public static final String ICON_COLUMN = "icon";
     private static final String TIMESTAMP_COLUMN = "timestamp";
-    static final String URL_COLUMN = "url";
+    private static final String URL_COLUMN = "url";
 
-    DatabaseHelper(Context context) {
+    public DatabaseHelper(Context context) {
         super(context, TABLE_NAME, null, 103);
         weakContext = new WeakReference<>(context);
     }
@@ -62,13 +63,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         database.execSQL(createTable);
     }
 
-    void restartTable() {
+    public void restartTable() {
         dropTable();
         createTable();
         Log.i(TAG, "Database version: " + getWritableDatabase().getVersion());
     }
 
-    void addItem(JSONObject object) {
+    public void addItem(JSONObject object) {
         SQLiteDatabase database = this.getWritableDatabase();
         ContentValues contentValues = createContentValues(object);
         long result = database.insert(TABLE_NAME, null, contentValues);
@@ -132,28 +133,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return contentValues;
     }
 
-    void insertArray(JSONArray array) {
-        restartTable();
-        Log.i(TAG, "Starting to insert array");
-
-        for (int i = 0; i < array.length(); i++) {
-            try {
-                Log.i(TAG, "Inserting item " + i);
-                JSONObject object = array.getJSONObject(i);
-                addItem(object);
-            } catch (Exception e) {
-                Log.e(TAG, "insertArray function failed", e);
-            }
-        }
-    }
-
-    Cursor getItems() {
+    public Cursor getItems() {
         SQLiteDatabase database = this.getWritableDatabase();
         String query = "SELECT * FROM " + TABLE_NAME;
         return database.rawQuery(query, null);
     }
 
-    Cursor getFilteredItems(String searchedText) {
+    public Cursor getFilteredItems(String searchedText) {
         if (searchedText.equals("") || searchedText.trim().length() == 0) { //Check if searchedText is only whitespaces
             return getItems();
         }
@@ -170,6 +156,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private void makeToast(String text) {
-        ((MainActivity)weakContext.get()).runOnUiThread(() -> Toast.makeText(weakContext.get(), text, Toast.LENGTH_SHORT).show());
+        ((MainActivity) weakContext.get()).runOnUiThread(() -> Toast.makeText(weakContext.get(), text, Toast.LENGTH_SHORT).show());
     }
 }

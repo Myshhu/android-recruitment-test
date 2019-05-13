@@ -1,4 +1,4 @@
-package dog.snow.androidrecruittest;
+package dog.snow.androidrecruittest.app;
 
 import android.database.Cursor;
 import android.os.Bundle;
@@ -11,12 +11,15 @@ import android.text.TextWatcher;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import dog.snow.androidrecruittest.R;
+import dog.snow.androidrecruittest.data.DataDownloader;
+import dog.snow.androidrecruittest.database.DatabaseHelper;
+
 public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
 
     private RecyclerViewAdapter mAdapter;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private DataDownloader dataDownloader;
-    private EditText etSearch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,7 +29,22 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
         mSwipeRefreshLayout.setOnRefreshListener(this);
 
-        etSearch = (EditText) findViewById(R.id.search_et);
+        setupSearchBarListener();
+
+        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.items_rv);
+
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(layoutManager);
+
+        mAdapter = new RecyclerViewAdapter(this);
+        recyclerView.setAdapter(mAdapter);
+
+        resetDatabase();
+        downloadData();
+    }
+
+    private void setupSearchBarListener() {
+        EditText etSearch = (EditText) findViewById(R.id.search_et);
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -47,26 +65,15 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
             }
         });
+    }
 
-        RecyclerView recyclerView = (RecyclerView) findViewById(R.id.items_rv);
-
-        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
-        recyclerView.setLayoutManager(layoutManager);
-
-        mAdapter = new RecyclerViewAdapter(this);
-        recyclerView.setAdapter(mAdapter);
-
-        resetDatabase();
-        downloadData();
+    private void resetDatabase() {
+        new DatabaseHelper(this).restartTable();
     }
 
     private void downloadData() {
         dataDownloader = new DataDownloader(this, mAdapter, mSwipeRefreshLayout);
         dataDownloader.execute();
-    }
-
-    private void resetDatabase() {
-        new DatabaseHelper(this).restartTable();
     }
 
     @Override
