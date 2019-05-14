@@ -105,7 +105,10 @@ public class DataDownloader extends AsyncTask<Void, Integer, Void> {
         super.onPostExecute(aVoid);
 
         Log.i(TAG, "Notifying adapter ");
-        makeToast("List completed");
+
+        if(downloadedJSONArray != null) {
+            makeToast("List completed");
+        }
         mAdapter.notifyAdapterDataSetChanged();
     }
 
